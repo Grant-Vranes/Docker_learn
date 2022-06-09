@@ -296,7 +296,7 @@ Docker是一个**Client Server结构的系统**，Docker守护进程运行在主
 
 ![在这里插入图片描述](dockerBook.assets/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2ZhbmppYW5oYWk=,size_16,color_FFFFFF,t_70.png)
 
-> 帮助命令
+#### 3.1.1 帮助命令
 
 ```bash
 docker version  # docker版本信息
@@ -306,7 +306,9 @@ docker 命令 --help
 
 官方命令文档：https://docs.docker.com/engine/reference/commandline/docker/
 
-> 镜像命令
+
+
+#### 3.1.2 镜像命令
 
 - `docker images`查看本地主机上所有的镜像
 
@@ -410,4 +412,702 @@ docker 命令 --help
   ```
 
   
+
+#### 3.1.3 容器命令
+
+**说明： 我们有了镜像才可创建容器，linux，下载一个centos镜像来测试学习**
+
+```shell
+docker pull centos
+```
+
+- 新建容器并启动
+
+  ```bash
+  docker run [可选参数] [imageName]
+   
+  # 参数说明
+  --name=“Name”   给容器命名    tomcat01    tomcat02    用来区分容器
+  -d      后台方式运行
+  -it     使用交互方式运行，进入容器查看内容
+  -p      指定容器的端口     -p 8080:8080
+      -p  ip:主机端口：容器端口
+      -p  主机端口：容器端口（常用）
+      -p  容器端口(只有主机内才能访问了)
+      容器端口(也可以不加-p，等同于上一条)
+  -P      随机指定端口
+   
+   
+  # 测试，启动并进入容器，/bin/bash表示以什么什么命令方式进入，还可以些/bin/sh
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ ~]# docker run -it centos /bin/bash
+  [root@74e82b7980e7 /]# ls   # 查看容器内的centos，基础版本，很多命令是不完善的
+  bin  etc   lib    lost+found  mnt  proc  run   srv  tmp  var
+  dev  home  lib64  media       opt  root  sbin  sys  usr
+   
+  # 从容器中退回主机
+  [root@77969f5dcbf9 /]# exit
+  exit
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# ls
+  bin   dev  fanfan  lib    lost+found  mnt  proc  run   srv  tmp  var
+  boot  etc  home    lib64  media       opt  root  sbin  sys  usr
+  ```
+
+- 列出所有运行的容器
+
+  ```bash
+  # docker ps 命令
+  无       # 列出当前正在运行的容器
+  -a      # 列出正在运行的容器包括历史容器
+  -n=?    # 显示最近创建的容器
+  -q      # 只显示当前容器的编号
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker ps
+  CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker ps -a
+  CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                     PORTS               NAMES
+  77969f5dcbf9        centos              "/bin/bash"         5 minutes ago       Exited (0) 5 minutes ago                       xenodochial_bose
+  74e82b7980e7        centos              "/bin/bash"         16 minutes ago      Exited (0) 6 minutes ago                       silly_cori
+  a57250395804        bf756fb1ae65        "/hello"            7 hours ago         Exited (0) 7 hours ago                         elated_nash
+  392d674f4f18        bf756fb1ae65        "/hello"            8 hours ago         Exited (0) 8 hours ago                         distracted_mcnulty
+  571d1bc0e8e8        bf756fb1ae65        "/hello"            23 hours ago        Exited (0) 23 hours ago                        magical_burnell
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker ps -qa
+  77969f5dcbf9
+  74e82b7980e7
+  a57250395804
+  392d674f4f18
+  571d1bc0e8e8
+  ```
+
+- 退出容器
+
+  ```bash
+  exit            # 直接退出容器并关闭
+  Ctrl + P + Q    # 容器不关闭退出，就想nohup java -jar
+  ```
+
+- 删除容器
+
+  ```bash
+  docker rm -f 容器id                  # 删除指定容器
+  docker rm -f $(docker ps -aq)       # 删除所有容器
+  docker ps -a -q|xargs docker rm -f  # 删除所有的容器
+  ```
+
+- 启动和停止容器
+
+  ```bash
+  docker start 容器id           # 启动容器
+  docker restart 容器id         # 重启容器
+  docker stop 容器id            # 停止当前正在运行的容器
+  docker kill 容器id            # 强制停止当前的容器
+  ```
+
+
+
+#### 3.1.4 常用其他命令
+
+- 后台启动容器
+
+  ```bash
+  # 命令 docker run -d 镜像名
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker run -d centos
+   
+  # 问题 docker ps， 发现centos停止了
+   
+  # 常见的坑， docker 容器使用后台运行， 就必须要有一个前台进程，docker发现没有应用，就会自动停止
+  # 如同nginx， 容器启动后，发现自己没有提供服务，就会立即停止，就是没有程序了
+  ```
+
+- 查看日志
+
+  ```bash
+  docker logs -tf --tail number 容器id
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker logs -tf --tail 1 8d1621e09bff
+  2020-08-11T10:53:15.987702897Z [root@8d1621e09bff /]# exit      # 日志输出
+   
+  # 自己编写一段shell脚本
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker run -d centos /bin/sh -c "while true;do echo message;sleep 1;done"
+  a0d580a21251da97bc050763cf2d5692a455c228fa2a711c3609872008e654c2
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker ps
+  CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+  a0d580a21251        centos              "/bin/sh -c 'while t…"   3 seconds ago       Up 1 second                             lucid_black
+   
+  # 显示日志
+  -tf                 # 显示日志,t打印时间戳，f持续输出
+  --tail number       # 显示日志条数
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker logs -tf --tail 10 a0d580a21251
+  ```
+
+- 查看容器中进程信息ps
+
+  ```bash
+  # 命令 docker top 容器id
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker top df358bc06b17
+  UID                 PID                 PPID                C                   STIME               TTY     
+  root                28498               28482               0                   19:38               ?   
+  ```
+
+- 查看镜像的元数据
+
+  ```bash
+  # 命令
+  docker inspect 容器id
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker inspect df358bc06b17
+  [
+      {
+          "Id": "df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3",
+          "Created": "2020-08-11T11:38:34.935048603Z",
+          "Path": "/bin/bash",
+          "Args": [],
+          "State": {
+              "Status": "running",
+              "Running": true,
+              "Paused": false,
+              "Restarting": false,
+              "OOMKilled": false,
+              "Dead": false,
+              "Pid": 28498,
+              "ExitCode": 0,
+              "Error": "",
+              "StartedAt": "2020-08-11T11:38:35.216616071Z",
+              "FinishedAt": "0001-01-01T00:00:00Z"
+          },
+          "Image": "sha256:0d120b6ccaa8c5e149176798b3501d4dd1885f961922497cd0abef155c869566",
+          "ResolvConfPath": "/var/lib/docker/containers/df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3/resolv.conf",
+          "HostnamePath": "/var/lib/docker/containers/df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3/hostname",
+          "HostsPath": "/var/lib/docker/containers/df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3/hosts",
+          "LogPath": "/var/lib/docker/containers/df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3/df358bc06b17ef44f215d35d9f46336b28981853069a3739edfc6bd400f99bf3-json.log",
+          "Name": "/hungry_heisenberg",
+          "RestartCount": 0,
+          "Driver": "overlay2",
+          "Platform": "linux",
+          "MountLabel": "",
+          "ProcessLabel": "",
+          "AppArmorProfile": "",
+          "ExecIDs": null,
+          "HostConfig": {
+              "Binds": null,
+              "ContainerIDFile": "",
+              "LogConfig": {
+                  "Type": "json-file",
+                  "Config": {}
+              },
+              "NetworkMode": "default",
+              "PortBindings": {},
+              "RestartPolicy": {
+                  "Name": "no",
+                  "MaximumRetryCount": 0
+              },
+              "AutoRemove": false,
+              "VolumeDriver": "",
+              "VolumesFrom": null,
+              "CapAdd": null,
+              "CapDrop": null,
+              "Capabilities": null,
+              "Dns": [],
+              "DnsOptions": [],
+              "DnsSearch": [],
+              "ExtraHosts": null,
+              "GroupAdd": null,
+              "IpcMode": "private",
+              "Cgroup": "",
+              "Links": null,
+              "OomScoreAdj": 0,
+              "PidMode": "",
+              "Privileged": false,
+              "PublishAllPorts": false,
+              "ReadonlyRootfs": false,
+              "SecurityOpt": null,
+              "UTSMode": "",
+              "UsernsMode": "",
+              "ShmSize": 67108864,
+              "Runtime": "runc",
+              "ConsoleSize": [
+                  0,
+                  0
+              ],
+              "Isolation": "",
+              "CpuShares": 0,
+              "Memory": 0,
+              "NanoCpus": 0,
+              "CgroupParent": "",
+              "BlkioWeight": 0,
+              "BlkioWeightDevice": [],
+              "BlkioDeviceReadBps": null,
+              "BlkioDeviceWriteBps": null,
+              "BlkioDeviceReadIOps": null,
+              "BlkioDeviceWriteIOps": null,
+              "CpuPeriod": 0,
+              "CpuQuota": 0,
+              "CpuRealtimePeriod": 0,
+              "CpuRealtimeRuntime": 0,
+              "CpusetCpus": "",
+              "CpusetMems": "",
+              "Devices": [],
+              "DeviceCgroupRules": null,
+              "DeviceRequests": null,
+              "KernelMemory": 0,
+              "KernelMemoryTCP": 0,
+              "MemoryReservation": 0,
+              "MemorySwap": 0,
+              "MemorySwappiness": null,
+              "OomKillDisable": false,
+              "PidsLimit": null,
+              "Ulimits": null,
+              "CpuCount": 0,
+              "CpuPercent": 0,
+              "IOMaximumIOps": 0,
+              "IOMaximumBandwidth": 0,
+              "MaskedPaths": [
+                  "/proc/asound",
+                  "/proc/acpi",
+                  "/proc/kcore",
+                  "/proc/keys",
+                  "/proc/latency_stats",
+                  "/proc/timer_list",
+                  "/proc/timer_stats",
+                  "/proc/sched_debug",
+                  "/proc/scsi",
+                  "/sys/firmware"
+              ],
+              "ReadonlyPaths": [
+                  "/proc/bus",
+                  "/proc/fs",
+                  "/proc/irq",
+                  "/proc/sys",
+                  "/proc/sysrq-trigger"
+              ]
+          },
+          "GraphDriver": {
+              "Data": {
+                  "LowerDir": "/var/lib/docker/overlay2/5af8a2aadbdba9e1e066331ff4bce56398617710a22ef906f9ce4d58bde2d360-init/diff:/var/lib/docker/overlay2/62926d498bd9d1a6684bb2f9920fb77a2f88896098e66ef93c4b74fcb19f29b6/diff",
+                  "MergedDir": "/var/lib/docker/overlay2/5af8a2aadbdba9e1e066331ff4bce56398617710a22ef906f9ce4d58bde2d360/merged",
+                  "UpperDir": "/var/lib/docker/overlay2/5af8a2aadbdba9e1e066331ff4bce56398617710a22ef906f9ce4d58bde2d360/diff",
+                  "WorkDir": "/var/lib/docker/overlay2/5af8a2aadbdba9e1e066331ff4bce56398617710a22ef906f9ce4d58bde2d360/work"
+              },
+              "Name": "overlay2"
+          },
+          "Mounts": [],
+          "Config": {
+              "Hostname": "df358bc06b17",
+              "Domainname": "",
+              "User": "",
+              "AttachStdin": true,
+              "AttachStdout": true,
+              "AttachStderr": true,
+              "Tty": true,
+              "OpenStdin": true,
+              "StdinOnce": true,
+              "Env": [
+                  "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+              ],
+              "Cmd": [
+                  "/bin/bash"
+              ],
+              "Image": "centos",
+              "Volumes": null,
+              "WorkingDir": "",
+              "Entrypoint": null,
+              "OnBuild": null,
+              "Labels": {
+                  "org.label-schema.build-date": "20200809",
+                  "org.label-schema.license": "GPLv2",
+                  "org.label-schema.name": "CentOS Base Image",
+                  "org.label-schema.schema-version": "1.0",
+                  "org.label-schema.vendor": "CentOS"
+              }
+          },
+          "NetworkSettings": {
+              "Bridge": "",
+              "SandboxID": "4822f9ac2058e8415ebefbfa73f05424fe20cc8280a5720ad3708fa6e80cdb08",
+              "HairpinMode": false,
+              "LinkLocalIPv6Address": "",
+              "LinkLocalIPv6PrefixLen": 0,
+              "Ports": {},
+              "SandboxKey": "/var/run/docker/netns/4822f9ac2058",
+              "SecondaryIPAddresses": null,
+              "SecondaryIPv6Addresses": null,
+              "EndpointID": "5fd269c0a28227241e40cd30658e3ffe8ad6cc3e6514917c867d89d36a31d605",
+              "Gateway": "172.17.0.1",
+              "GlobalIPv6Address": "",
+              "GlobalIPv6PrefixLen": 0,
+              "IPAddress": "172.17.0.2",
+              "IPPrefixLen": 16,
+              "IPv6Gateway": "",
+              "MacAddress": "02:42:ac:11:00:02",
+              "Networks": {
+                  "bridge": {
+                      "IPAMConfig": null,
+                      "Links": null,
+                      "Aliases": null,
+                      "NetworkID": "30d6017888627cb565618b1639fecf8fc97e1ae4df5a9fd5ddb046d8fb02b565",
+                      "EndpointID": "5fd269c0a28227241e40cd30658e3ffe8ad6cc3e6514917c867d89d36a31d605",
+                      "Gateway": "172.17.0.1",
+                      "IPAddress": "172.17.0.2",
+                      "IPPrefixLen": 16,
+                      "IPv6Gateway": "",
+                      "GlobalIPv6Address": "",
+                      "GlobalIPv6PrefixLen": 0,
+                      "MacAddress": "02:42:ac:11:00:02",
+                      "DriverOpts": null
+                  }
+              }
+          }
+      }
+  ]
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]#
+  ```
+
+- 进入当前正在运行的容器
+
+  ```bash
+  # 我们通常容器使用后台方式运行的， 需要进入容器，修改一些配置
+   
+  # 命令
+  docker exec -it 容器id /bin/bash
+   
+  # 测试
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker exec -it df358bc06b17 /bin/bash
+  [root@df358bc06b17 /]# ls       
+  bin  etc   lib    lost+found  mnt  proc  run   srv  tmp  var
+  dev  home  lib64  media       opt  root  sbin  sys  usr
+  [root@df358bc06b17 /]# ps -ef
+  UID        PID  PPID  C STIME TTY          TIME CMD
+  root         1     0  0 Aug11 pts/0    00:00:00 /bin/bash
+  root        29     0  0 01:06 pts/1    00:00:00 /bin/bash
+  root        43    29  0 01:06 pts/1    00:00:00 ps -ef
+   
+  # 方式二
+  docker attach 容器id
+   
+  # docker exec       # 进入容器后开启一个新的终端，可以在里面操作
+  # docker attach     # 进入容器正在执行的终端，不会启动新的进程
+  ```
+
+- 从容其中拷贝文件到主机
+
+  ```bash
+  docker cp 容器id:容器内路径 目的地主机路径
+   
+  [root@iZ2zeg4ytp0whqtmxbsqiiZ /]# docker cp 7af535f807e0:/home/Test.java /home
+  
+  后面学习数据卷 -v 可以直接将容器中的目录同步到主机中的目录
+  ```
+
+
+
+#### 小结
+
+![image-20220609112405084](dockerBook.assets/image-20220609112405084.png)
+
+> Docker命令帮助文档
+
+```bash
+attach Attach local standard input, output, and error streams to a
+running container
+#当前shell下 attach连接指定运行的镜像
+build Build an image from a Dockerfile # 通过Dockerfile定制镜像
+commit Create a new image from a container's changes #提交当前容器为新的镜像
+cp Copy files/folders between a container and the local filesystem #
+拷贝文件
+create Create a new container #创建一个新的容器
+diff Inspect changes to files or directories on a container's
+filesystem #查看docker容器的变化
+events Get real time events from the server # 从服务获取容器实时时间
+exec Run a command in a running container # 在运行中的容器上运行命令
+export Export a container's filesystem as a tar archive #导出容器文件系统作
+为一个tar归档文件[对应import]
+history Show the history of an image # 展示一个镜像形成历史
+images List images #列出系统当前的镜像
+import Import the contents from a tarball to create a filesystem image #
+从tar包中导入内容创建一个文件系统镜像
+info Display system-wide information # 显示全系统信息
+inspect Return low-level information on Docker objects #查看容器详细信息
+kill Kill one or more running containers # kill指定docker容器
+load Load an image from a tar archive or STDIN #从一个tar包或标准输入中加载
+一个镜像[对应save]
+login Log in to a Docker registry #
+logout Log out from a Docker registry
+logs Fetch the logs of a container
+pause Pause all processes within one or more containers
+port List port mappings or a specific mapping for the container
+ps List containers
+pull Pull an image or a repository from a registry
+push Push an image or a repository to a registry
+rename Rename a container
+restart Restart one or more containers
+rm Remove one or more containers
+rmi Remove one or more images
+run Run a command in a new container
+save Save one or more images to a tar archive (streamed to STDOUT by
+default)
+search Search the Docker Hub for images
+start Start one or more stopped containers
+stats Display a live stream of container(s) resource usage statistics
+stop Stop one or more running containers
+tag Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+top Display the running processes of a container
+unpause Unpause all processes within one or more containers
+update Update configuration of one or more containers
+version Show the Docker version information
+wait Block until one or more containers stop, then print their exit codes
+```
+
+
+
+
+
+### 3.2 Docker部署软件实战
+
+#### 3.2.1 Docker安装Nginx
+
+```bash
+# 1. 搜索镜像 search 建议去docker hub搜索，可以看到帮助文档
+# 2. 下载镜像 pull
+# 3. 运行测试
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+centos              latest              0d120b6ccaa8        32 hours ago        215MB
+nginx               latest              08393e824c32        7 days ago          132MB
+ 
+# -d 后台运行
+# -name 给容器命名
+# -p 宿主机端口：容器内部端口
+# 当然如果你前面并没有拉取镜像，docker run在运行的时候也会检测有无，无就拉取
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# docker run -d --name nginx01 -p 3344:80 nginx  # 后台方式启动启动镜像
+fe9dc33a83294b1b240b1ebb0db9cb16bda880737db2c8a5c0a512fc819850e0
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                  NAMES
+fe9dc33a8329        nginx               "/docker-entrypoint.…"   4 seconds ago       Up 4 seconds        0.0.0.0:3344->80/tcp   nginx01
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# curl localhost:3344    # 本地访问测试,能够打印出对应页面的代码
+ 
+# 进入容器
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# docker exec -it nginx01 /bin/bash
+root@fe9dc33a8329:/# whereis nginx
+nginx: /usr/sbin/nginx /usr/lib/nginx /etc/nginx /usr/share/nginx
+root@fe9dc33a8329:/# cd /etc/nginx/
+root@fe9dc33a8329:/etc/nginx# ls
+conf.d      koi-utf  mime.types  nginx.conf   uwsgi_params
+fastcgi_params  koi-win  modules     scgi_params  win-utf
+```
+
+运行Nginx的时候使用到了命令-p 3344:80，涉及到端口暴露的概念，宿主机有自己的防火墙，docker中的容器也相当于一个独立的系统，也有自己的防火墙。这个操作就可以将其宿主机的3344端口映射到容器的80端口
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/20200812111035666.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2ZhbmppYW5oYWk=,size_16,color_FFFFFF,t_70)
+
+
+
+
+
+#### 3.2.2 Docker安装Tomcat
+
+```bash
+# 官方的使用
+docker run -it --rm tomcat:9.0
+ 
+# 我们之前的启动都是后台的，停止了容器之后， 容器还是可以查到，docker run -it --rm 一般用来测试，用完就删
+ 
+# 下载再启动
+docker pull tomcat
+ 
+# 启动运行
+docker run -d -p 3344:8080 --name tomcat01 tomcat
+ 
+# 测试访问没有问题
+ 
+# 进入容器
+docker exec -it tomcat01 /bin/bash
+ 
+# 发现问题：1.linux命令少了， 2. webapps下内容为空，阿里云镜像默认是最小的镜像，所有不必要的都剔除了，保证最小可运行环境即可
+```
+
+
+
+#### 3.2.3 Docker部署ES+Kibana
+
+```bash
+
+# es 暴露的端口很多
+# es 十分的耗内存
+# es 的数据一般需要放置到安全目录！ 挂载
+# --net somenetwork 网络配置
+ 
+# 启动elasticsearch
+docker run -d --name elasticsearch --net somenetwork -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.6.2
+ 
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:7.6.2
+a920894a940b354d3c867079efada13d96cf9138712c76c8dea58fabd9c7e96f
+ 
+# 启动了linux就卡主了，docker stats 查看cpu状态
+ 
+# 测试一下es成功了
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# curl localhost:9200
+{
+  "name" : "a920894a940b",
+  "cluster_name" : "docker-cluster",
+  "cluster_uuid" : "bxE1TJMEThKgwmk7Aa3fHQ",
+  "version" : {
+    "number" : "7.6.2",
+    "build_flavor" : "default",
+    "build_type" : "docker",
+    "build_hash" : "ef48eb35cf30adf4db14086e8aabd07ef6fb113f",
+    "build_date" : "2020-03-26T06:34:37.794943Z",
+    "build_snapshot" : false,
+    "lucene_version" : "8.4.0",
+    "minimum_wire_compatibility_version" : "6.8.0",
+    "minimum_index_compatibility_version" : "6.0.0-beta1"
+  },
+  "tagline" : "You Know, for Search"
+}
+ 
+ 
+# 增加内存限制，修改配置文件 -e 环境配置修改(限制使用的内存大小)
+docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e ES_JAVA_OPTS="-Xms64m -Xmx512m" elasticsearch:7.6.2
+```
+
+
+
+
+
+### 3.3 可视化
+
+- **portainer**
+
+```bash
+docker run -d -p 8088:9000 --restart=always -v /var/run/docker.sock:/var/run/docker.sock --privileged=true portainer/portainer
+ 
+# 测试
+[root@iZ2zeg4ytp0whqtmxbsqiiZ home]# curl localhost:8088
+<!DOCTYPE html
+><html lang="en" ng-app="portainer">
+ 
+# 外网访问 http://ip:8088
+```
+
+![在这里插入图片描述](dockerBook.assets/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2ZhbmppYW5oYWk=,size_16,color_FFFFFF,t_70-16547585765493.png)
+
+- Rancher(CI/CD再用)
+
+
+
+
+
+## 4 Docker原理
+
+### 4.1 Docker镜像讲解
+
+> 镜像是什么？
+>
+> 镜像是一种轻量级、可执行的独立软件保，用来打包软件运行环境和基于运行环境开发的软件，他包含运行某个软件所需的所有内容，包括**代码、运行时库、环境变量和配置文件**。
+> 将所有的应用和环境，直接打包为docker镜像，就可以直接运行。
+
+#### 4.1.1 Docker镜像加载原理
+
+- UnionFs （联合文件系统）
+
+  > 我们下载的时候看到一层层的下载就是这个。
+  > UnionFs（联合文件系统）：Union文件系统（UnionFs）是一种分层、轻量级并且高性能的文件系统，他支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下（unite several directories into a single virtual filesystem)。Union文件系统是Docker镜像的基础。镜像可以通过分层来进行继承，基于基础镜像（没有父镜像），可以制作各种具体的应用镜像。
+  > **特性**：一次同时加载多个文件系统，但从外面看起来，只能看到一个文件系统，联合加载会把各层文件系统叠加起来，这样最终的文件系统会包含所有底层的文件和目录。
+  >
+  > ![image-20220609154946922](dockerBook.assets/image-20220609154946922.png)
+
+- Docker镜像加载原理
+
+  > docker的镜像实际上由一层一层的文件系统组成，这种层级的文件系统UnionFS。
+  > boots(boot file system）主要包含 bootloader和 Kernel, bootloader主要是引导加 kernel,Linux刚启动时会加bootfs文件系统，在 Docker镜像的最底层是 boots。这一层与我们典型的Linux/Unix系统是一样的，包含boot加載器和内核。当boot加载完成之后整个内核就都在内存中了，此时内存的使用权已由 bootfs转交给内核，此时系统也会卸载bootfs。rootfs（root file system),在 bootfs之上。包含的就是典型 Linux系统中
+  > 的/dev,/proc,/bin,/etc等标准目录和文件。 rootfs就是各种不同的操作系统发行版，比如 Ubuntu,Centos等等。
+  >
+  > ![image-20220609155153709](dockerBook.assets/image-20220609155153709.png)
+  >
+  > 平时我们安装进虚拟机的CentOS都是好几个G，为什么Docker这里才200M？
+  >
+  > ![image-20220609155234600](dockerBook.assets/image-20220609155234600.png)
+  >
+  > 对于个精简的OS,rootfs可以很小，只需要包合最基本的命令，工具和程序库就可以了，因为底层直接用
+  > Host的kernel，自己只需要提供rootfs就可以了。由此可见对于不同的Linux发行版， boots基本是一致的， rootfs会有差別，因此不同的发行版可以公用bootfs.
+  > 虚拟机是分钟级别，容器是秒级！
+
+
+
+#### 4.1.2 分层理解
+
+我们可以去下载一个镜像，注意观察下载的日志输出，可以看到是一层层的在下载
+
+![image-20220609155750874](dockerBook.assets/image-20220609155750874.png)
+
+思考：为什么Docker镜像要采用这种分层的结构呢？
+最大的好处，我觉得莫过于资源共享了！比如有多个镜像都从相同的Base镜像构建而来，那么宿主机
+只需在磁盘上保留一份base镜像，同时内存中也只需要加载一份base镜像，这样就可以为所有的容器
+服务了，而且镜像的每一层都可以被共享。
+
+查看镜像分层的方式可以通过docker image inspect 命令
+
+![image-20220609155845092](dockerBook.assets/image-20220609155845092.png)
+
+所有的 Docker镜像都起始于一个基础镜像层，当进行修改或增加新的内容时，就会在当前镜像层之上，创建新的镜像层。
+举一个简单的例子，假如基于 Ubuntu Linux16.04创建一个新的镜像，这就是新镜像的第一层；如果在该镜像中添加 Python包，就会在基础镜像层之上创建第二个镜像层；如果继续添加一个安全补丁，就会创健第三个镜像层
+
+该镜像当前已经包含3个镜像层，如下图所示（这只是一个用于演示的很简单的例子）。
+
+<img src="dockerBook.assets/image-20220609155957267.png" alt="image-20220609155957267" style="zoom:67%;" />
+
+在添加额外的镜像层的同时，镜像始终保持是当前所有镜像的组合，理解这一点非常重要。下图中举了
+一个简单的例子，每个镜像层包含3个文件，而镜像包含了来自两个镜像层的6个文件。
+
+<img src="dockerBook.assets/image-20220609160022898.png" alt="image-20220609160022898" style="zoom:67%;" />
+
+上图中的镜像层跟之前图中的略有区別，主要目的是便于展示文件
+下图中展示了一个稍微复杂的三层镜像，在外部看来整个镜像只有6个文件，这是因为最上层中的文件7是文件5的一个更新版
+
+<img src="dockerBook.assets/image-20220609160049819.png" alt="image-20220609160049819" style="zoom:67%;" />
+
+这种情況下，上层镜像层中的文件覆盖了底层镜像层中的文件。这样就使得文件的更新版本作为一个新镜像层添加到镜像当中。
+Docker通过存储引擎（新版本采用快照机制）的方式来实现镜像层堆栈，并保证多镜像层对外展示为统一的文件系统。
+Linux上可用的存储引撃有AUFS、 Overlay2、 Device Mapper、Btrfs以及ZFS。顾名思义，每种存储引擎都基于 Linux中对应的文件系统或者块设备技术，井且每种存储引擎都有其独有的性能特点。
+Docker在 Windows上仅支持 windowsfilter 一种存储引擎，该引擎基于NTFS文件系统之上实现了分层和CoW [1]。
+下图展示了与系统显示相同的三层镜像。所有镜像层堆并合井，对外提供统一的视图。
+
+<img src="dockerBook.assets/image-20220609160112411.png" alt="image-20220609160112411" style="zoom:67%;" />
+
+Docker 镜像都是只读的，当容器启动时，一个新的可写层加载到镜像的顶部！
+这一层就是我们通常说的容器层，容器之下的都叫镜像层！
+
+![image-20220609160536318](dockerBook.assets/image-20220609160536318.png)
+
+对容器层进行操作后，想把这个发布出去，就需要把自己操作后的容器层和原镜像层一起又打包成一个新的镜像
+
+
+
+#### 4.1.3 commit镜像
+
+```bash
+docker commit 提交容器成为一个新的版本
+ 
+# 命令和git 原理类似
+docker commit -m="提交的描述信息" -a="作者" 容器id 目标镜像名:[TAG]
+ 
+# 如
+docker commit -a="Akio" -m="add webapps app" d798a5946c1f tomcat007:1.0
+```
+
+实战演练
+
+```bash
+# 1、启动一个默认的tomcat
+docker run -d -p 8080:8080 tomcat
+# 2、发现这个默认的tomcat 是没有webapps应用，官方的镜像默认webapps下面是没有文件的！可以把 webapps.dist下的东西赋值到webapps下
+docker exec -it 容器id /bin/bash
+# 3、拷贝文件进去
+# 4、将操作过的容器通过commit调教为一个镜像！我们以后就使用我们修改过的镜像即可，这就是我们自己的一个修改的镜像。如果你想要保存当前容器的状态，就可以通过commit来提交，获得一个镜像，就好比我们我们使用虚拟机的快照。
+docker commit -m="描述信息" -a="作者" 容器id 目标镜像名:[TAG]
+docker commit -a="kuangshen" -m="add webapps app" 容器id tomcat02:1.0
+```
+
+![image-20220609175657264](dockerBook.assets/image-20220609175657264.png)
+
+
 
