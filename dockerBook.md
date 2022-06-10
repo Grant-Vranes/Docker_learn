@@ -790,7 +790,7 @@ docker pull centos
   # docker attach     # 进入容器正在执行的终端，不会启动新的进程
   ```
 
-- 从容其中拷贝文件到主机
+- 从容器中拷贝文件到主机
 
   ```bash
   docker cp 容器id:容器内路径 目的地主机路径
@@ -1087,7 +1087,7 @@ Docker 镜像都是只读的，当容器启动时，一个新的可写层加载�
 #### 4.1.3 commit镜像
 
 ```bash
-docker commit 提交容器成为一个新的版本
+docker commit 提交容器成为一个新的镜像版本
  
 # 命令和git 原理类似
 docker commit -m="提交的描述信息" -a="作者" 容器id 目标镜像名:[TAG]
@@ -1240,9 +1240,9 @@ docker run -d -P --name nginx05 -v juming:/etc/nginx:rw nginx
 
 
 
-## 6 Dockerfile
 
-### 6.1 初识Dockerfile
+
+### 5.5 初识Dockerfile
 
 Dockerfile 就是用来构建docker镜像的构建文件！命令脚本！先体验一下！
 
@@ -1256,7 +1256,7 @@ FROM centos  # 基于centos
 VOLUME ["volume01","volume02"]  # 挂载两个卷，匿名挂载
 
 CMD echo "----end----"
-CMD /bin/bash # 以/bin/bash的方式进入容器，操作命令是bash
+CMD /bin/bash # 以/bin/bash命令运行
 #这里的每个命令，就是镜像的一层！
 ```
 
@@ -1289,7 +1289,7 @@ docker inspect 容器id
 
 
 
-### 6.2 数据卷容器
+### 5.6 数据卷容器
 
 多个MySQL同步数据！
 
@@ -1332,3 +1332,294 @@ fuck
 容器之间的配置信息的传递，<u>数据卷容器的生命周期一直持续到没有容器使用为止</u>。
 
 但是一旦你持久化到了本地（使用-v 从容器中挂载到本地），这个时候，本地的数据是不会删除的！
+
+
+
+
+
+## 6 Dockerfile
+
+### 6.1 Dockerfile介绍
+
+`dockerfile`是用来构建docker镜像的文件！命令参数脚本！
+
+构建步骤：
+
+1、 编写一个dockerfile文件
+
+2、 docker build 构建称为一个镜像
+
+3、 docker run运行镜像
+
+4、 docker push发布镜像（DockerHub 、阿里云仓库)
+
+但是很多官方镜像都是基础包，很多功能没有，我们通常会自己搭建自己的镜像！
+
+官方既然可以制作镜像，那我们也可以！
+
+
+
+### 6.2 Dockerfile构建过程
+
+**基础知识：**
+
+1、每个保留关键字(指令）都是必须是大写字母
+
+2、执行从上到下顺序
+
+3、`#`表示注释
+
+4、每一个指令都会创建提交一个新的镜像层，并提交！
+
+<img src="dockerBook.assets/image-20220610091639841.png" alt="image-20220610091639841" style="zoom:67%;" />
+
+Dockerfile是面向开发的，我们以后要发布项目，做镜像，就需要编写dockerfile文件，这个文件十分简单！
+
+Docker镜像逐渐成企业交付的标准，必须要掌握！
+
+DockerFile：构建文件，定义了一切的步骤，源代码
+
+DockerImages：通过DockerFile构建生成的镜像，最终发布和运行产品。
+
+Docker容器：容器就是镜像运行起来提供服务。
+
+
+
+### 6.3 Dockerfile常用指令
+
+```bash
+# DockerFile常用指令
+FROM				# 基础镜像，一切从这里开始构建
+MAINTAINER			# 镜像是谁写的， 姓名+邮箱
+RUN					# 镜像构建的时候需要运行的命令
+ADD					# 步骤，tomcat镜像，这个tomcat压缩包！添加内容 添加同目录
+WORKDIR				# 镜像的工作目录
+VOLUME				# 挂载的目录
+EXPOSE				# 保留端口配置
+CMD					# 指定这个容器启动的时候要运行的命令，只有最后一个会生效，可被替代。
+ENTRYPOINT			# 指定这个容器启动的时候要运行的命令，可以追加命令
+ONBUILD				# 当构建一个被继承 DockerFile 这个时候就会运行ONBUILD的指令，触发指令。
+COPY				# 类似ADD，将我们文件拷贝到镜像中
+ENV					# 构建的时候设置环境变量！
+```
+
+<img src="dockerBook.assets/image-20220610092601915.png" alt="image-20220610092601915" style="zoom:67%;" />
+
+
+
+### 6.4 Dockerfile实战
+
+Docker Hub中99%镜像都是从这个基础镜像过来的`From scratch`，然后配置需要的软件和配置来进行构建
+
+![image-20220610093829547](dockerBook.assets/image-20220610093829547.png)
+
+> 创建一个自己的centos
+
+```bash
+# 1.编写Dockerfile文件
+vim mydockerfile-centos
+FROM centos
+MAINTAINER Akio<481158831@qq.com>
+
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+
+RUN yum -y install vim
+RUN yum -y install net-tools
+
+EXPOSE 80
+
+CMD echo $MYPATH
+CMD echo "-----end----"
+CMD /bin/bash
+```
+
+```bash
+# 2、通过这个文件构建镜像
+# 命令 docker build -f 文件路径 -t 镜像名:[tag] .
+docker build -f mydockerfile-centos -t mycentos:0.1 .
+```
+
+![image-20220610103004680](dockerBook.assets/image-20220610103004680.png)
+
+出现这种情况是因为centos7之后就不支持appstream：https://www.cnblogs.com/shan333/p/16181937.html
+
+https://blog.csdn.net/weixin_43252521/article/details/124409151
+
+> ==补充一个命令：`docker history images_id`==列出本地进行的变更历史
+
+![image-20220610103529706](dockerBook.assets/image-20220610103529706.png)
+
+
+
+
+
+### 6.5 CMD 和 ENTRYPOINT区别
+
+```bash
+CMD					# 指定这个容器启动的时候要运行的命令，只有最后一个会生效，可被替代。
+ENTRYPOINT			# 指定这个容器启动的时候要运行的命令，可以追加命令
+```
+
+**测试CMD**
+
+```bash
+# 编写dockerfile文件
+$ vim dockerfile-test-cmd
+FROM centos
+CMD ["ls","-a"]
+# 构建镜像
+$ docker build -f dockerfile-test-cmd -t cmd-test:0.1 .
+# 运行镜像
+$ docker run cmd-test:0.1
+.
+..
+.dockerenv
+bin
+dev
+
+# 想追加一个命令  -l 成为ls -al
+$ docker run cmd-test:0.1 -l
+docker: Error response from daemon: OCI runtime create failed: container_linux.go:349: starting container process caused "exec: \"-l\":
+ executable file not found in $PATH": unknown.
+ERRO[0000] error waiting for container: context canceled 
+# cmd的情况下 -l 替换了CMD["ls","-l"]。 -l  不是命令所有报错
+```
+
+**测试ENTRYPOINT**
+
+```bash
+# 编写dockerfile文件
+$ vim dockerfile-test-entrypoint
+FROM centos
+ENTRYPOINT ["ls","-a"]
+# 构建镜像
+$ docker build -f dockerfile-test-entrypoint -t test/entrypoint:0.1 .
+# 运行镜像
+$ docker run entrypoint-test:0.1
+.
+..
+.dockerenv
+bin
+dev
+etc
+home
+lib
+lib64
+lost+found ...
+# 我们的命令，是直接拼接在我们得ENTRYPOINT命令后面的
+$ docker run entrypoint-test:0.1 -l
+total 56
+drwxr-xr-x   1 root root 4096 May 16 06:32 .
+drwxr-xr-x   1 root root 4096 May 16 06:32 ..
+-rwxr-xr-x   1 root root    0 May 16 06:32 .dockerenv
+lrwxrwxrwx   1 root root    7 May 11  2019 bin -> usr/bin
+drwxr-xr-x   5 root root  340 May 16 06:32 dev
+drwxr-xr-x   1 root root 4096 May 16 06:32 etc
+drwxr-xr-x   2 root root 4096 May 11  2019 home
+lrwxrwxrwx   1 root root    7 May 11  2019 lib -> usr/lib
+lrwxrwxrwx   1 root root    9 May 11  2019 lib64 -> usr/lib64 ....
+```
+
+
+
+
+
+### 6.6 Dockerfile实战：构建Tomcat镜像
+
+- 准备Tomcat和JDK的压缩包（因为Tomcat的启动需要以来JDK）到当前目录下
+
+  ![image-20220610140225726](dockerBook.assets/image-20220610140225726.png)
+
+- 编写Dockerfile文件
+
+  ```bash
+  FROM centos # 基于centos镜像
+  MAINTAINER cheng<1204598429@qq.com>
+  COPY README /usr/local/README # 将当前目录下README文件复制到容器中的/usr/local下
+  ADD jdk-8u231-linux-x64.tar.gz /usr/local/ # 复制当前目录下jdk的压缩包解压到容器中的/usr/local下（ADD命令）
+  ADD apache-tomcat-9.0.35.tar.gz /usr/local/ # 复制解压
+  RUN yum -y install vim
+  ENV MYPATH /usr/local #设置环境变量
+  WORKDIR $MYPATH #设置工作目录
+  ENV JAVA_HOME /usr/local/jdk1.8.0_231 #设置环境变量，注意jdk1.8.0_231文件夹是上面ADD执行后解压缩的文件夹
+  ENV CATALINA_HOME /usr/local/apache-tomcat-9.0.35 #设置环境变量
+  ENV PATH $PATH:$JAVA_HOME/bin:$CATALINA_HOME/lib #设置环境变量 分隔符是：
+  EXPOSE 8080 #设置暴露的端口
+  CMD /usr/local/apache-tomcat-9.0.35/bin/startup.sh && tail -F /usr/local/apache-tomcat-9.0.35/logs/catalina.out # 设置默认命令
+  ```
+
+- 构建镜像
+
+  ```bash
+  docker build -t mytomcat:0.1 .
+  ```
+
+  ![image-20220610135954783](dockerBook.assets/image-20220610135954783.png)
+
+- 运行镜像
+
+  ```bash
+  docker run -d -p 8080:8080 --name tomcat007 -v /Data_volume/Tomcat/webapps:/usr/local/apache-tomcat-9.0.64/webapps/ -v /Data_volume/Tomcat/logs/:/usr/local/apache-tomcat-9.0.64/logs mytomcat:0.1
+  ```
+
+  ![image-20220610142843386](dockerBook.assets/image-20220610142843386.png)
+
+- 访问测试ok
+
+  ![image-20220610143247116](dockerBook.assets/image-20220610143247116.png)
+
+
+
+### 6.7 发布自己的镜像
+
+1、地址 https://hub.docker.com/
+
+2、确定这个账号可以登录
+
+3、登录
+
+```bash
+$ docker login --help
+Usage:  docker login [OPTIONS] [SERVER]
+
+Log in to a Docker registry.
+If no server is specified, the default is defined by the daemon.
+
+Options:
+  -p, --password string   Password
+      --password-stdin    Take the password from stdin
+  -u, --username string   Username
+```
+
+![image-20220610151635885](dockerBook.assets/image-20220610151635885.png)
+
+4、推送镜像
+
+![image-20220610151829588](dockerBook.assets/image-20220610151829588.png)
+
+```bash
+# 会发现push不上去，因为如果没有前缀的话默认是push到 官方的library
+# 解决方法
+# 第一种 build构建镜像的时候添加你的dockerhub用户名，然后在push就可以放到自己的仓库了
+$ docker build -t akio4docker/mytomcat:0.1 .
+# 第二种 使用docker tag #然后再次push
+$ docker tag [image_id] akio4docker/mytomcat:1.0 #然后再次push
+```
+
+![image-20220610152233933](dockerBook.assets/image-20220610152233933.png)
+
+
+
+
+
+### 小结
+
+![image-20220610154917160](dockerBook.assets/image-20220610154917160.png)
+
+![image-20220610155259723](dockerBook.assets/image-20220610155259723.png)
+
+
+
+
+
